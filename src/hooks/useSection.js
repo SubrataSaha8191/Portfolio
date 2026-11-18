@@ -1,4 +1,4 @@
-import { useLayoutEffect } from 'react';
+import { useQueuedLayout } from '../animation/setupQueue';
 import { gsap } from '../animation/gsap';
 
 /**
@@ -7,7 +7,7 @@ import { gsap } from '../animation/gsap';
  * side effects such as text-split reverts and event listeners.
  */
 export function useSection(ref, setup, deps = []) {
-  useLayoutEffect(() => {
+  useQueuedLayout(() => {
     const cleanups = [];
     const ctx = gsap.context(() => setup({ cleanups, scope: ref.current }), ref);
     return () => {

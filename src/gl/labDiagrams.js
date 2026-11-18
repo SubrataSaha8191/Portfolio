@@ -1,8 +1,8 @@
 // Illustrative 2D diagrams for the Lab section. They are storytelling, not live data.
 // Each draw(ctx, w, h, t) paints with the shared palette; the caller handles cross-fades.
-const INK = (a) => `rgba(236,232,220,${a})`;
-const LIME = (a) => `rgba(198,255,61,${a})`;
-const ORANGE = (a) => `rgba(255,106,40,${a})`;
+const INK = (a) => `rgba(239,232,214,${a})`;
+const LIME = (a) => `rgba(255,214,10,${a})`;
+const ORANGE = (a) => `rgba(255,59,29,${a})`;
 const font = (ctx, s) => (ctx.font = `${s}px "JetBrains Mono", monospace`);
 
 function box(ctx, x, y, w, h, label, hot, size = 11) {

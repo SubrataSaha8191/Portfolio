@@ -1,76 +1,87 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ScrollTrigger } from './animation/gsap';
-import { startSmoothScroll, stopSmoothScroll, pauseScroll, resumeScroll } from './animation/smoothScroll';
-import HeroCanvas from './gl/HeroCanvas';
+import { startSmoothScroll, stopSmoothScroll, pauseScroll, resumeScroll, scrollToTarget } from './animation/smoothScroll';
 import Preloader from './components/Preloader';
-import Cursor from './components/Cursor';
+import SprayCursor from './components/SprayCursor';
+import ScrollRail from './components/ScrollRail';
 import Nav from './components/Nav';
 import Hero from './components/Hero';
 import Manifesto from './components/Manifesto';
-import Work from './components/Work';
+import Giant from './components/Giant';
+import Chapters from './components/Chapters';
 import Lab from './components/Lab';
 import About from './components/About';
 import Arsenal from './components/Arsenal';
 import Path from './components/Path';
 import Contact from './components/Contact';
-import CaseStudy from './components/CaseStudy';
-import Choreography from './components/Choreography';
-import Giant from './components/Giant';
-import ScrollDial from './components/ScrollDial';
+import { loadThree } from './animation/paintWipe';
 
 export default function App() {
-  const [glInfo, setGlInfo] = useState(null);
-  const [ready, setReady] = useState(false);
-  const [done, setDone] = useState(false);
-  const [project, setProject] = useState(null);
+  const [portraitReady, setPortraitReady] = useState(false);
+  const [fontsReady, setFontsReady] = useState(false);
+  const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
     history.scrollRestoration = 'manual';
     window.scrollTo(0, 0);
     startSmoothScroll();
-    pauseScroll(); // locked until the opening sequence ends
+    pauseScroll(); // locked until the opening film ends
     document.documentElement.classList.add('is-loading');
     document.querySelector('main')?.setAttribute('inert', '');
     return stopSmoothScroll;
   }, []);
 
-  // reveal: hero typography + portrait scan begin while the hole is still opening
-  const onReveal = useCallback(() => setReady(true), []);
-  const onDone = useCallback(() => {
-    document.documentElement.classList.remove('is-loading');
-    document.querySelector('main')?.removeAttribute('inert');
-    setDone(true);
-    resumeScroll();
-    requestAnimationFrame(() => ScrollTrigger.refresh());
+  // readiness = fonts + the portrait stencil built. Never a fake percentage.
+  useEffect(() => {
+    document.fonts?.ready.then(() => setFontsReady(true));
+    const t = setTimeout(() => setFontsReady(true), 2500);
+    return () => clearTimeout(t);
   }, []);
 
-  // Layout can shift after first measure (web fonts, lazy images). Pins and scrubs depend on exact
-  // positions, so re-measure whenever the document height actually changes.
+  // The hole is open: unlock scroll (the fly-through is scroll-driven) and bring in the nav and the rail.
+  const onReveal = useCallback(() => {
+    setRevealed(true);
+    document.documentElement.classList.remove('is-loading');
+    document.querySelector('main')?.removeAttribute('inert');
+    resumeScroll();
+    // (the fonts/layout refresh already ran while the film played; only a gentle position update is needed here)
+    requestAnimationFrame(() => ScrollTrigger.update());
+    if (window.requestIdleCallback) window.requestIdleCallback(() => loadThree(), { timeout: 3000 });
+    else setTimeout(loadThree, 1500);
+  }, []);
+
+  // Layout can shift after first measure (fonts, lazy images). Pins depend on exact positions.
   useEffect(() => {
     let t;
-    const refresh = () => { clearTimeout(t); t = setTimeout(() => ScrollTrigger.refresh(), 220); };
+    // A refresh re-measures every pin (hundreds of ms), so it must never run while the user is scrolling and
+    // is skipped when the page height didn't really change.
+    let lastH = 0, lastScroll = 0;
+    const onScr = () => { lastScroll = performance.now(); };
+    window.addEventListener('scroll', onScr, { passive: true });
+    const run = () => {
+      if (performance.now() - lastScroll < 500) { t = setTimeout(run, 400); return; }
+      const h = document.documentElement.scrollHeight;
+      if (lastH && Math.abs(h - lastH) < 3) return;
+      lastH = h;
+      ScrollTrigger.refresh();
+    };
+    const refresh = () => { clearTimeout(t); t = setTimeout(run, 260); };
     document.fonts?.ready.then(refresh);
     document.fonts?.addEventListener?.('loadingdone', refresh);
     window.addEventListener('load', refresh);
     const ro = new ResizeObserver(refresh);
     ro.observe(document.body);
-    return () => {
-      clearTimeout(t);
-      ro.disconnect();
-      document.fonts?.removeEventListener?.('loadingdone', refresh);
-      window.removeEventListener('load', refresh);
-    };
+    return () => { clearTimeout(t); window.removeEventListener('scroll', onScr); ro.disconnect(); document.fonts?.removeEventListener?.('loadingdone', refresh); window.removeEventListener('load', refresh); };
   }, []);
 
-  const open = useCallback((id) => setProject(id), []);
-  const close = useCallback(() => setProject(null), []);
+  const open = useCallback((id) => scrollToTarget(`#ch-${id}`), []);
 
   return (
     <>
-      <a href="#work" className="skip">Skip to work</a>
+      <a href="#work" className="skip">Skip to the seven chapters</a>
       <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true" focusable="false">
         <defs>
-          {[['ink', '#ece8dc', 2, 1], ['lime', '#c6ff3d', 1.6, 1], ['faint', '#ece8dc', 1, 0.12]].map(([n, c, r, o]) => (
+          {[['ink', '#efe8d6', 2, 1], ['lime', '#ffd60a', 1.6, 1], ['faint', '#efe8d6', 1, 0.14]].map(([n, c, r, o]) => (
             <filter key={n} id={`ol-${n}`} x="-3%" y="-8%" width="106%" height="116%" colorInterpolationFilters="sRGB">
               <feMorphology in="SourceAlpha" operator="erode" radius={r} result="e" />
               <feComposite in="SourceAlpha" in2="e" operator="out" result="ring" />
@@ -80,25 +91,22 @@ export default function App() {
           ))}
         </defs>
       </svg>
-      <Cursor />
-      <HeroCanvas onReady={setGlInfo} introGate={ready} />
+      <SprayCursor />
       <div className="grain" aria-hidden="true" />
-      {!done && <Preloader glInfo={glInfo} onReveal={onReveal} onDone={onDone} />}
-      <Nav visible={ready} />
-      <ScrollDial visible={ready} />
+      <Preloader ready={portraitReady && fontsReady} onReveal={onReveal} />
+      <Nav visible={revealed} />
+      <ScrollRail visible={revealed} />
       <main id="main">
-        <Hero introGate={ready} pointCount={glInfo?.count} />
+        <Hero onPortraitReady={() => setPortraitReady(true)} />
         <Manifesto />
         <Giant />
-        <Work onOpen={open} />
+        <Chapters />
         <Lab onOpen={open} />
         <About />
         <Arsenal />
         <Path />
-        <Contact pointCount={glInfo?.count} />
-        <Choreography />
+        <Contact />
       </main>
-      <CaseStudy id={project} onClose={close} onNavigate={setProject} />
     </>
   );
 }

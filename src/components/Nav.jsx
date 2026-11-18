@@ -4,6 +4,7 @@ import { scrollToTarget, pauseScroll, resumeScroll } from '../animation/smoothSc
 import { motion } from '../animation/state';
 import { sections, site } from '../data/content';
 import Magnetic from './Magnetic';
+import { runWipe } from '../animation/paintWipe';
 
 // Each char is rendered twice (stacked); hovering rolls the pair upward.
 function RollText({ text }) {
@@ -16,6 +17,27 @@ function RollText({ text }) {
         </span>
       ))}
     </span>
+  );
+}
+
+// One hand-drawn doodle per menu link. Each draws itself (stroke-dash) on hover/focus, with a paper
+// "sticker" copy offset behind the black ink line, like a marker tag over a spray stencil.
+const DOODLES = [
+  { c: 'u', vb: '0 0 100 24', par: 'none', d: 'M2 14 C10 3 16 23 26 12 S42 3 52 14 S70 23 80 10 S94 7 98 14', w: 5 },
+  { c: 'r', vb: '0 0 60 60', d: 'M4 34 C16 29 30 39 47 30 M34 11 L50 30 L31 49', w: 6 },
+  { c: 'o', vb: '0 0 100 50', d: 'M12 30 C4 8 62 -3 93 14 C110 27 70 49 30 45 C-2 41 -1 13 42 6 C72 2 96 12 91 25', w: 4 },
+  { c: 's', vb: '0 0 60 60', d: 'M30 4 V19 M30 41 V56 M4 30 H19 M41 30 H56 M12 12 L22 22 M38 38 L48 48 M48 12 L38 22 M22 38 L12 48', w: 5 },
+  { c: 'b', vb: '0 0 50 70', d: 'M30 3 L9 38 H25 L15 67 L44 26 H28 Z', w: 5 },
+  { c: 'd', vb: '0 0 100 24', par: 'none', d: 'M2 12 H90 M78 3 L98 12 L78 21', w: 5 },
+  { c: 'k', vb: '0 0 80 50', d: 'M6 44 L10 12 L28 30 L40 5 L52 30 L70 12 L74 44 Z', w: 5 },
+];
+function Doodle({ i }) {
+  const o = DOODLES[i % DOODLES.length];
+  return (
+    <svg className={`menu__doodle d--${o.c}`} viewBox={o.vb} preserveAspectRatio={o.par || 'xMidYMid meet'} aria-hidden="true" focusable="false">
+      <path d={o.d} transform="translate(2.2 2.2)" fill="none" stroke="#efe8d6" strokeWidth={o.w} strokeLinecap="round" strokeLinejoin="round" pathLength="1" strokeDasharray={o.dash ? '0.06 0.05' : undefined} />
+      <path d={o.d} fill="none" stroke="#0d0c0b" strokeWidth={o.w} strokeLinecap="round" strokeLinejoin="round" pathLength="1" strokeDasharray={o.dash ? '0.06 0.05' : undefined} />
+    </svg>
   );
 }
 
@@ -102,7 +124,7 @@ export default function Nav({ visible }) {
     return () => window.removeEventListener('pointermove', mv);
   }, [open]);
 
-  // cinematic navigation: two curtains sweep up, the destination is named, the page jumps unseen, curtains lift
+  // navigation = the liquid paint wipe (WebGL). The page jumps while the screen is fully covered.
   const go = (e, id) => {
     e.preventDefault();
     if (wiping.current) return;
@@ -119,19 +141,7 @@ export default function Nav({ visible }) {
     };
     if (prefersReducedMotion()) { jump(); return; }
     wiping.current = true;
-    const w = wipe.current;
-    const layers = w.querySelectorAll('i');
-    const word = w.querySelector('b span');
-    word.textContent = sections.find((x) => x.id === id).label;
-    gsap
-      .timeline({ onComplete: () => { wiping.current = false; btn.current?.focus(); } })
-      .set(w, { visibility: 'visible' })
-      .fromTo(layers, { clipPath: 'inset(100% 0 0 0)' }, { clipPath: 'inset(0% 0 0 0)', duration: 0.8, stagger: 0.1, ease: 'expo.inOut' })
-      .fromTo(word, { yPercent: 115 }, { yPercent: 0, duration: 0.7, ease: 'expo.out' }, '-=0.5')
-      .call(jump)
-      .to(word, { yPercent: -115, duration: 0.5, ease: 'expo.in' }, '+=0.2')
-      .to(layers, { clipPath: 'inset(0 0 100% 0)', duration: 0.85, stagger: 0.1, ease: 'expo.inOut' }, '-=0.3')
-      .set(w, { visibility: 'hidden' });
+    runWipe(sections.find((x) => x.id === id).label, jump).then(() => { wiping.current = false; btn.current?.focus(); });
   };
 
   const s = sections[active];
@@ -160,8 +170,6 @@ export default function Nav({ visible }) {
         </Magnetic>
       </header>
 
-      <div ref={wipe} className="wipe" aria-hidden="true" style={{ visibility: 'hidden' }}><i /><i /><b><span /></b></div>
-
       <div id="menu" ref={menu} className="menu" role="dialog" aria-modal="true" aria-label="Site navigation" style={{ visibility: 'hidden' }}>
         <nav className="menu__nav" aria-label="Sections" style={{ '--h': active }}>
           <ul>
@@ -175,7 +183,7 @@ export default function Nav({ visible }) {
                   onFocus={() => setActive(i)}
                 >
                   <span className="menu__idx mono">{sec.n}</span>
-                  <RollText text={sec.label} />
+                  <span className="menu__word"><RollText text={sec.label} /><Doodle i={i} /></span>
                   <span className="sr-only">{sec.label}</span>
                 </a>
               </li>

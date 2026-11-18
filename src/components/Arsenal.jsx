@@ -1,126 +1,78 @@
 import { useRef, useState } from 'react';
 import { gsap, ScrollTrigger, prefersReducedMotion } from '../animation/gsap';
+import { scrollToTarget } from '../animation/smoothScroll';
 import { useSection } from '../hooks/useSection';
-import { initReveals } from '../animation/reveals';
 import { arsenal } from '../data/content';
+import Logo from './Logo';
 
-const KEYS = ['def', '=>', 'fn', '#include', 'std::', 'class', 'async', 'impl', 'struct', 'import', 'type', 'let'];
-const LINES = ['$ git switch -c feature/rag', '$ docker compose up -d', '$ cargo build --release', '$ python train.py --eval', '$ curl -s localhost:8000/docs', '$ sudo systemctl status facelock'];
+const COL = { lang: '#ff3b1d', ui: '#ffd60a', svc: '#11b5e4', ai: '#ff4fa3', env: '#efe8d6' };
+const rot = (k, on) => (((k * 37 + on * 11) % 13) - 6) * 0.9;
+const off = (k, on) => (((k * 53 + on * 7) % 5) - 2) * 6;
 
-const VISUALS = {
-  lang: () => (
-    <div className="v-lang" aria-hidden="true">
-      {[0, 1, 2].map((r) => (
-        <div className="v-lang__row" key={r} style={{ '--dir': r % 2 ? 1 : -1, '--spd': `${22 + r * 6}s` }}>
-          {[...KEYS, ...KEYS].map((k, i) => <span key={i} className={(i + r) % 4 === 0 ? 'is-solid' : ''}>{k}</span>)}
-        </div>
-      ))}
-    </div>
-  ),
-  ui: () => (
-    <div className="v-ui" aria-hidden="true">
-      <div className="v-ui__bar"><i /><i /><i /></div>
-      <div className="v-ui__hero" />
-      <div className="v-ui__row"><b /><b /><b /></div>
-      <div className="v-ui__row v-ui__row--s"><b /><b /></div>
-    </div>
-  ),
-  svc: () => (
-    <svg className="v-svc" viewBox="0 0 320 220" aria-hidden="true">
-      {[[40, 110, 'CLIENT'], [160, 50, 'API'], [160, 170, 'AUTH'], [280, 110, 'DB']].map(([x, y, t]) => (
-        <g key={t}><rect x={x - 34} y={y - 16} width="68" height="32" rx="8" fill="none" stroke="currentColor" strokeWidth="2" /><text x={x} y={y + 4} textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="10" fill="currentColor">{t}</text></g>
-      ))}
-      {['M74 104 L126 58', 'M74 116 L126 162', 'M194 54 L246 104', 'M194 166 L246 116'].map((d, i) => (
-        <path key={i} d={d} stroke="currentColor" strokeWidth="2" fill="none" strokeDasharray="5 6" className="v-svc__flow" style={{ animationDelay: `${i * 0.25}s` }} />
-      ))}
-      <circle r="5" fill="currentColor"><animateMotion dur="3.2s" repeatCount="indefinite" path="M74 104 L126 58 L194 54 L246 104" /></circle>
-      <circle r="5" fill="currentColor"><animateMotion dur="3.2s" begin="1.6s" repeatCount="indefinite" path="M246 116 L194 166 L126 162 L74 116" /></circle>
+function RackCan({ color, label, n }) {
+  return (
+    <svg viewBox="0 0 100 210" className="rk__svg" aria-hidden="true" focusable="false">
+      <rect x="40" y="2" width="20" height="16" rx="4" fill="#0d0c0b" />
+      <rect x="28" y="14" width="44" height="26" rx="8" fill="#efe8d6" stroke="#0d0c0b" strokeWidth="4" />
+      <path d="M14 52 Q14 34 50 34 Q86 34 86 52 V190 Q86 204 72 204 H28 Q14 204 14 190 Z" fill={color} stroke="#0d0c0b" strokeWidth="4.5" />
+      <rect x="14" y="98" width="72" height="52" fill="#efe8d6" stroke="#0d0c0b" strokeWidth="4" />
+      <text x="50" y="120" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" fontSize="9" fill="#0d0c0b">{n}</text>
+      <text x="50" y="142" textAnchor="middle" fontFamily="Anton, Impact, sans-serif" fontSize={label.length > 12 ? 8.5 : label.length > 9 ? 10.5 : 13} fill="#0d0c0b" letterSpacing="0.5">{label}</text>
+      <rect x="24" y="60" width="9" height="30" rx="4.5" fill="#fff" opacity=".4" />
+      <path d="M30 204 V214 M62 204 V210" stroke={color} strokeWidth="5" strokeLinecap="round" />
     </svg>
-  ),
-  ai: () => (
-    <div className="v-ai" aria-hidden="true">
-      {Array.from({ length: 54 }, (_, i) => <i key={i} style={{ '--d': `${((i % 9) + Math.floor(i / 9)) * 0.14}s` }} />)}
-    </div>
-  ),
-  env: () => (
-    <div className="v-env" aria-hidden="true">
-      <div className="v-env__bar"><i /><i /><i /></div>
-      <div className="v-env__body">
-        {LINES.map((l, i) => <p key={l} style={{ '--i': i }}>{l}</p>)}
-        <p className="v-env__cur">$ <span /></p>
-      </div>
-    </div>
-  ),
-};
-const VARIANT = { lang: 'lime', ui: 'ink', svc: 'orange', ai: 'dark', env: 'night' };
+  );
+}
 
 /**
- * Arsenal is a deck: five cards stacked in one place. While pinned, each next card rises from
- * below and buries the previous one, which shrinks and dims behind it. The 3D slab stack on the
- * right follows whichever card is on top.
+ * Arsenal is a rack of five spray cans, one per layer. While pinned, scrolling picks up the next can: it
+ * lifts, shakes, and sprays its tools onto the wall as stickers in its own colour (and the old ones are
+ * painted over). Cans are also real buttons, so mouse and keyboard users can pick any layer directly.
  */
 export default function Arsenal() {
   const root = useRef(null);
   const [on, setOn] = useState(0);
+  const st = useRef(null);
 
-  useSection(root, ({ cleanups, scope }) => {
-    initReveals(scope, cleanups);
+  useSection(root, ({ scope }) => {
     if (prefersReducedMotion()) { scope.classList.add('is-static'); return; }
-    const cards = scope.querySelectorAll('.card');
-    const n = cards.length;
-    gsap.set(cards, { yPercent: (i) => (i === 0 ? 0 : 118) });
-    const tl = gsap.timeline({
-      defaults: { ease: 'none' },
-      scrollTrigger: {
-        trigger: scope.querySelector('.arsenal__stage'), start: 'top top', end: () => `+=${n * 60}%`, pin: true, scrub: 0.7, anticipatePin: 1,
-        onUpdate: (self) => setOn(Math.min(n - 1, Math.floor(self.progress * n * 0.999))),
-      },
+    const n = arsenal.length;
+    st.current = ScrollTrigger.create({
+      trigger: scope.querySelector('.rk__stage'), start: 'top top', end: () => `+=${n * 60}%`, pin: true, anticipatePin: 1,
+      onUpdate: (self) => setOn(Math.min(n - 1, Math.floor(self.progress * n * 0.999))),
     });
-    cards.forEach((c, i) => {
-      if (i === 0) return;
-      tl.to(c, { yPercent: 0, duration: 1, ease: 'power3.inOut' }, i - 1)
-        .to(cards[i - 1], { scale: 0.9, yPercent: -7, opacity: 0.3, duration: 1, ease: 'power2.inOut' }, i - 1);
-    });
-    tl.to({}, { duration: 0.3 });
-    gsap.fromTo(scope.querySelector('.stack'), { yPercent: 40, opacity: 0 }, { yPercent: 0, opacity: 1, ease: 'power3.out', scrollTrigger: { trigger: scope, start: 'top 90%', end: 'top 30%', scrub: true } });
+    gsap.fromTo(scope.querySelectorAll('.rk__can'), { yPercent: 120, rotate: (i) => (i % 2 ? 14 : -14) }, { yPercent: 0, rotate: 0, stagger: 0.07, ease: 'back.out(1.6)', scrollTrigger: { trigger: scope, start: 'top 85%', end: 'top 30%', scrub: 0.8 } });
   }, []);
 
+  const pick = (i) => {
+    const s = st.current;
+    if (!s) return setOn(i);
+    scrollToTarget(s.start + ((i + 0.5) / arsenal.length) * (s.end - s.start), { duration: 1.1 });
+  };
+
+  const a = arsenal[on];
+  const c = COL[a.id];
   return (
     <section id="arsenal" ref={root} className="arsenal" aria-labelledby="arsenal-title">
-      <span className="bgword" data-dir="r" aria-hidden="true">Stack</span>
-      <div className="arsenal__stage">
-        <div className="wrap">
-          <header className="sect-head">
-            <p className="label mono" data-reveal>( 04 — Technical arsenal )</p>
-            <h2 id="arsenal-title" className="display" data-split data-fx="wave">Tools, by the layer they serve.</h2>
-          </header>
-          <div className="arsenal__grid">
-            <div className="deck">
-              {arsenal.map((a, i) => (
-                <article className={`card card--${VARIANT[a.id]} ${on === i ? 'is-top' : ''}`} key={a.id} style={{ zIndex: i + 1 }} aria-label={a.title}>
-                  <span className="card__big" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
-                  <div className="card__main">
-                    <p className="card__n mono">{String(i + 1).padStart(2, '0')} / {String(arsenal.length).padStart(2, '0')} · {a.note}</p>
-                    <h3>{a.title}</h3>
-                    <ul className="tags tags--big">{a.tools.map((t, k) => <li key={t} style={{ '--k': k }}>{t}</li>)}</ul>
-                  </div>
-                  <div className="card__vis">{VISUALS[a.id]()}</div>
-                </article>
-              ))}
-            </div>
-            <div className="stack" aria-hidden="true">
-              <div className="stack__plate">
-                {[...arsenal].reverse().map((a, ri) => {
-                  const i = arsenal.length - 1 - ri;
-                  return (
-                    <div key={a.id} className={`slab ${on === i ? 'is-on' : ''}`} style={{ '--z': ri }}>
-                      <span className="mono">{a.title}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+      <div className="rk__stage" style={{ '--c': c }}>
+        <header className="rk__head">
+          <p className="label mono">( 04 — Technical arsenal )</p>
+          <h2 id="arsenal-title" className="rk__h">Tools, by the layer they serve.</h2>
+        </header>
+        <div className="rk__wall" aria-live="polite">
+          <i className="rk__splat" key={`s${on}`} aria-hidden="true" />
+          <p className="rk__layer mono" key={`l${on}`}>{String(on + 1).padStart(2, '0')} / {String(arsenal.length).padStart(2, '0')} · {a.title} · {a.note}</p>
+          <ul className="rk__chips" key={`c${on}`} data-n={a.tools.length}>
+            {a.tools.map((t, k) => <li key={t} style={{ '--k': k, '--r': `${rot(k, on)}deg`, '--dy': `${off(k, on)}px` }}><Logo name={t} />{t}</li>)}
+          </ul>
+        </div>
+        <div className="rk__rack" role="group" aria-label="Choose a layer">
+          {arsenal.map((x, i) => (
+            <button key={x.id} className={`rk__can ${on === i ? 'is-on' : ''}`} onClick={() => pick(i)} aria-pressed={on === i} aria-label={`${x.title}: ${x.tools.join(', ')}`}>
+              <span className="rk__mist" aria-hidden="true">{[0, 1, 2, 3, 4, 5].map((m) => <i key={m} style={{ '--m': m, background: COL[x.id] }} />)}</span>
+              <RackCan color={COL[x.id]} label={x.title.toUpperCase()} n={String(i + 1).padStart(2, '0')} />
+            </button>
+          ))}
         </div>
       </div>
     </section>

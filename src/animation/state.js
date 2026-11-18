@@ -1,5 +1,8 @@
 // Mutable, non-reactive bridge between scroll/pointer (GSAP, DOM) and the WebGL
 // render loop. Nothing here triggers a React render.
+// The fly-through: `p` goes 0 -> 1 as you scroll through the wall; `render` is registered by the opening film.
+export const tunnel = { p: 0, render: null, open: false };
+
 export const motion = {
   pointer: { x: 0, y: 0, px: 0, py: 0 }, // ndc + pixel
   scroll: 0, // px
