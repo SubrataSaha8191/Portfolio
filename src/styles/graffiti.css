@@ -694,3 +694,12 @@ html, body { overflow-x: clip; }
   .rt__track { will-change: transform; }
 }
 @media (max-width: 700px) { .cr__list { margin-bottom: 13vh; } .cr__say { margin-top: 6vh; } }
+
+/* The concrete wall is one fixed layer behind everything (it used to be the body's scrolling background, so it visibly slid
+   down behind pinned stages such as Path, which should only move sideways). */
+body { background: transparent !important; }
+body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; background-color: #262522; background-image: var(--wall, none); background-size: 512px 512px; transform: translateZ(0); }
+
+/* road: the solid asphalt is a background-COLOR (it used to be a second gradient layer, which the scrolling dash position
+   dragged sideways too, leaving half the road a different colour) */
+.rt__road { background-color: #0d0c0b; background-image: repeating-linear-gradient(90deg, var(--yellow) 0 90px, transparent 90px 190px); background-size: 190px 10px; background-position-y: 50%; background-repeat: repeat-x; }
