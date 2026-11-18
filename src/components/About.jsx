@@ -66,7 +66,7 @@ export default function About() {
   useSection(root, ({ scope, cleanups }) => {
     if (prefersReducedMotion()) { scope.classList.add('is-static'); setLights(true); return; }
     const stage = stageRef.current;
-    const lamp = { x: 0, y: 0, tx: 0, ty: 0, r: 0, tr: 250, last: 0, p: 0 };
+    const lamp = { x: 0, y: 0, tx: 0, ty: 0, r: 0, tr: 340, last: 0, p: 0 };
     const rect = () => stage.getBoundingClientRect();
     let lx = -1, ly = -1, lr = -1;
     const setLamp = () => {
@@ -105,6 +105,9 @@ export default function About() {
     });
     gsap.fromTo(scope.querySelector('.bl__head'), { yPercent: -60, opacity: 0, rotate: -4 }, { yPercent: 0, opacity: 1, rotate: 0, ease: 'power3.out', scrollTrigger: { trigger: scope, start: 'top 85%', end: 'top 35%', scrub: 0.7 } });
     gsap.fromTo(stage, { '--dark': 0 }, { '--dark': 1, ease: 'none', scrollTrigger: { trigger: scope, start: 'top 90%', end: 'top 20%', scrub: true } });
+    // leaving: the blacklight room dissolves into the bare wall (and lifts away a little) instead of sliding off with a hard edge,
+    // so the arsenal arrives on a clean wall
+    gsap.fromTo(stage, { opacity: 1, '--fade': 0 }, { opacity: 0, '--fade': 1, ease: 'power1.in', immediateRender: false, scrollTrigger: { trigger: scope, start: 'bottom 100%', end: 'bottom 8%', scrub: true } });
   }, []);
 
   const toggle = () => { if (stageRef.current) stageRef.current.dataset.manual = '1'; setLights((v) => !v); };

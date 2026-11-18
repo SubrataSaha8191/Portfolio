@@ -703,3 +703,18 @@ body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-even
 /* road: the solid asphalt is a background-COLOR (it used to be a second gradient layer, which the scrolling dash position
    dragged sideways too, leaving half the road a different colour) */
 .rt__road { background-color: #0d0c0b; background-image: repeating-linear-gradient(90deg, var(--yellow) 0 90px, transparent 90px 190px); background-size: 190px 10px; background-position-y: 50%; background-repeat: repeat-x; }
+
+/* about / blacklight room: the dark veil now runs to the bottom edge (it used to fade out over the last 20vh, leaving bare wall
+   under the content), the unlit text is readable instead of nearly invisible, and the lamp is wider */
+.bl__stage::before { background: linear-gradient(rgba(5, 4, 12, 0), rgba(5, 4, 12, 0.9) 9vh, rgba(5, 4, 12, 0.9)); }
+.bl__scene.is-dim { color: rgba(239, 232, 214, 0.42); }
+.bl__scene.is-dim canvas { opacity: 0.42; filter: grayscale(0.55); }
+.bl__scene.is-dim .bl__doodle path { stroke: rgba(239, 232, 214, 0.3); }
+.bl__scene { padding-bottom: 7vh; }
+.bl__chap { font-size: clamp(14px, 1.38vw, 21px); }
+.bl__facts li { font-size: clamp(12px, 1.1vw, 16px); }
+.bl__fig canvas { max-height: 66vh; }
+.bl__fig figcaption { bottom: -3vh; opacity: .8; }
+
+/* the bottom edge of the blacklight room softens while it leaves (--fade is scrubbed by scroll), so there is no hard seam */
+.bl__stage { -webkit-mask-image: linear-gradient(#000 calc(100% - var(--fade, 0) * 22vh), transparent); mask-image: linear-gradient(#000 calc(100% - var(--fade, 0) * 22vh), transparent); }
