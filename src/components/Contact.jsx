@@ -137,7 +137,7 @@ export default function Contact() {
         <svg className="cr__spark cr__spark--c" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2 L24 16 L38 20 L24 24 L20 38 L16 24 L2 20 L16 16Z" fill="#ff4fa3" stroke="#0d0c0b" strokeWidth="2.5" strokeLinejoin="round" /></svg>
         <div className="cr__roll">
           <p className="cr__small mono">( 06 — The end credits )</p>
-          <h2 id="contact-title" className="cr__big"><span className="cr__l1">A film by</span><br /><span className="cr__l2">Subrata Saha</span></h2>
+          <h2 id="contact-title" className="cr__big"><span className="cr__l1">An experience created by</span><br /><span className="cr__l2">Subrata Saha</span></h2>
           <dl className="cr__list">
             {CREDITS.map(([k, v]) => <div key={k}><dt className="mono">{k}</dt><dd>{v}</dd></div>)}
           </dl>

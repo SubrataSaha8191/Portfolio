@@ -83,10 +83,15 @@ export default function Nav({ visible }) {
   }, []);
 
   const toggle = (next) => {
+    if (wiping.current) return; // a page transition is running: the button must not fight it
     setOpen(next);
     motion.menuOpen = next;
     if (next) {
       pauseScroll();
+      // the timeline's first step (visibility) is a zero-length tween at time 0 that GSAP skips when re-playing from 0,
+      // which left the menu invisible while the button said "Close" (the "needs several clicks" bug): set it explicitly
+      gsap.set(menu.current, { visibility: 'visible' });
+      gsap.set(menu.current.querySelectorAll('.menu__nav, .menu__side'), { clearProps: 'opacity' });
       tl.current.timeScale(1).play();
       setTimeout(() => menu.current?.querySelector('.menu__link')?.focus(), 450);
     } else {
@@ -130,17 +135,21 @@ export default function Nav({ visible }) {
     if (wiping.current) return;
     const target = id === 'top' ? 0 : `#${id}`;
     const jump = () => {
-      setOpen(false);
-      motion.menuOpen = false;
+      tl.current.pause(0); // rewinding re-runs the timeline's "visible" step, so hide the menu after it
       gsap.set(menu.current, { visibility: 'hidden' });
-      tl.current.progress(0).pause();
+      gsap.set(menu.current.querySelectorAll('.menu__nav, .menu__side'), { clearProps: 'opacity' });
       document.querySelector('main')?.removeAttribute('inert');
       resumeScroll();
       scrollToTarget(target, { immediate: true, force: true });
       ScrollTrigger.update();
     };
-    if (prefersReducedMotion()) { jump(); return; }
+    if (prefersReducedMotion()) { setOpen(false); motion.menuOpen = false; jump(); return; }
     wiping.current = true;
+    // hand over to the paint wipe at once: the button flips back to "Menu" and the link text fades out while the red
+    // paint rolls over the (also red) menu background, instead of the text lingering until the page jumps
+    setOpen(false);
+    motion.menuOpen = false;
+    gsap.to(menu.current.querySelectorAll('.menu__nav, .menu__side'), { opacity: 0, duration: 0.22, ease: 'power1.out', overwrite: true });
     runWipe(sections.find((x) => x.id === id).label, jump).then(() => { wiping.current = false; btn.current?.focus(); });
   };
 

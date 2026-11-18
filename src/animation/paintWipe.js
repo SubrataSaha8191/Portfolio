@@ -85,7 +85,7 @@ export async function runWipe(text, cover) {
       .set(o.label, { autoAlpha: 1 })
       .to(v, { t: 1, duration: 1.0, ease: 'power2.inOut', onUpdate: () => (fallback ? gsap.set(o.canvas, { opacity: v.t }) : draw()) })
       .fromTo(o.word, { yPercent: 115, rotate: 4 }, { yPercent: 0, rotate: -3, duration: 0.7, ease: 'expo.out' }, '-=0.45')
-      .call(cover)
+      .call(cover, null, 1.0)
       .to(o.word, { yPercent: -115, duration: 0.5, ease: 'expo.in' }, '+=0.25')
       .to(v, { t: 2, duration: 1.0, ease: 'power2.inOut', onUpdate: () => (fallback ? gsap.set(o.canvas, { opacity: 2 - v.t }) : draw()) }, '-=0.3');
   });
