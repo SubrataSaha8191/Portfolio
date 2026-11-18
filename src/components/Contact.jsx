@@ -89,14 +89,14 @@ export default function Contact() {
     const say = splitText(sayEl, 'words');
     cleanups.push(say.revert);
     // The closing line is a ransom note: every word is a different cut-out, slapped on the wall one after another.
-    gsap.fromTo(say.words, { y: -260, scale: 2.3, rotate: (i) => (i % 2 ? 24 : -24), opacity: 0 },
-      { y: 0, scale: 1, rotate: (i) => [-4, 3, -2, 4, -3][i % 5], opacity: 1, stagger: 0.2, ease: 'expo.in', scrollTrigger: scrub(sayEl, 0.97, 0.5) });
+    gsap.fromTo(say.words, { y: -40, scale: 1.55, rotate: (i) => (i % 2 ? 16 : -16), opacity: 0 },
+      { y: 0, scale: 1, rotate: (i) => [-4, 3, -2, 4, -3][i % 5], opacity: 1, stagger: 0.2, ease: 'expo.in', scrollTrigger: scrub(sayEl, 0.88, 0.45) });
     const sigEl = scope.querySelector('.cr__sig');
     gsap.fromTo(sigEl, { opacity: 0 }, { opacity: 1, ease: 'none', scrollTrigger: scrub(sigEl, 0.98, 0.9) });
     gsap.to(scope.querySelectorAll('.cr__sig .draw'), { strokeDashoffset: 0, stagger: 0.15, ease: 'power1.inOut', scrollTrigger: scrub(sigEl, 0.9, 0.5) });
 
     // links: tied to the roll's own progress (not a position trigger), so they are guaranteed to be in by the end
-    tl.fromTo(scope.querySelectorAll('.cr__links .sticker'), { scale: 3, opacity: 0, rotate: () => gsap.utils.random(-30, 30) }, { scale: 1, opacity: 1, rotate: (i) => [-3, 2, -2][i % 3], stagger: 0.03, duration: 0.06, ease: 'power4.in' }, 0.86)
+    tl.fromTo(scope.querySelectorAll('.cr__links .sticker'), { scale: 1.6, y: -24, opacity: 0, rotate: () => gsap.utils.random(-18, 18) }, { scale: 1, y: 0, opacity: 1, rotate: (i) => [-3, 2, -2][i % 3], stagger: 0.03, duration: 0.06, ease: 'power4.in' }, 0.86)
       .fromTo(roll, { x: 0 }, { x: 0, keyframes: { x: [0, -9, 8, -5, 3, 0] }, duration: 0.05, ease: 'none', immediateRender: false }, 0.93);
 
     // --- paint dust drifting behind the roll, and a burst at the end ---

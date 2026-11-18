@@ -667,3 +667,30 @@ html.has-spray, html.has-spray * { cursor: none !important; }
 .rk__rack { bottom: 2vh; }
 .rk__can { width: clamp(64px, min(11vw, 16.5vh), 150px); }
 .rk__wall { bottom: 37vh; }
+
+/* -------- mobile / viewport robustness -------- */
+/* Pinned stages use the LARGE viewport height: on phones the address bar collapses and a 100svh stage left a bare strip
+   under it (and made neighbouring pins overlap). 100vh already equals the large viewport on mobile browsers. */
+.gh, .gs__stage, .cr__stage, .lab__stage, .rk__stage, .rt__stage, .bl__stage, .dr__stage, .hero, .giant__canvas, .path__stage { height: 100vh; height: 100lvh; }
+.ch { min-height: 100vh; min-height: 100lvh; }
+.cr__stage { min-height: 100vh; min-height: 100lvh; }
+/* credits: the roll fades out under the top edge instead of being cut hard (also stops text bleeding under the nav) */
+.cr__roll { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14vh); mask-image: linear-gradient(to bottom, transparent 0, #000 14vh); }
+.cr__stage { contain: paint; }
+html, body { overscroll-behavior-y: none; }
+@media (max-width: 700px) {
+  .cr__roll { padding-left: 14px; padding-right: 22px; }
+  .cr__big { font-size: clamp(36px, 11.5vw, 70px); line-height: 0.95; margin-bottom: 5vh; }
+  .cr__list { gap: 16px; margin-bottom: 7vh; }
+  .cr__say { margin-bottom: 3vh; }
+  .cr__foot { font-size: 9.5px; padding: 0 6px; }
+  .cr__spark { opacity: .8; }
+}
+
+html, body { overflow-x: clip; }
+@media (max-width: 700px) {
+  .cr__say { margin-top: 4vh; }
+  .rt__stage { overflow: hidden; }
+  .rt__track { will-change: transform; }
+}
+@media (max-width: 700px) { .cr__list { margin-bottom: 13vh; } .cr__say { margin-top: 6vh; } }
